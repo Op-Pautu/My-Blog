@@ -5,8 +5,11 @@ const mongoose = require('mongoose');
 const User = require('./models/User');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
+
 app.use(cors({ origin: 'http://localhost:5174', credentials: true }));
 app.use(express.json());
+app.use(cookieParser());
 
 mongoose.connect(
   'mongodb+srv://pautuop:1Smt88ldrDjFx90R@cluster0.2trjjhw.mongodb.net/?retryWrites=true&w=majority '
@@ -44,6 +47,18 @@ app.post('/login', async (req, res) => {
   } else {
     res.status(400).json({ message: 'Wrong password' });
   }
+});
+app.get('/profile', async (req, res) => {
+  const { token } = req.cookies;
+  jwt.verify(token, secret, {}, (err, info) => {
+    if (err) throw err;
+    res.json(info);
+  });
+});
+
+app.post('/logout', (req, res) => {
+  //   res.clearCookie('token').json('ok');
+  res.cookie('token', '').json('ok');
 });
 
 app.listen(3000, () => {
