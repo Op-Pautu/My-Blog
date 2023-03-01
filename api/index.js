@@ -10,12 +10,13 @@ const multer = require("multer");
 const uploadMiddleware = multer({ dest: "uploads/" });
 const fs = require("fs");
 const Post = require("./models/Post");
-
+const bodyParser = require("body-parser");
 app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
-// app.use(bodyParser.json());
-// app.use(bodyParser.urlencoded({ extended: true }));
+app.use("/uploads", express.static(__dirname + "/uploads"));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 mongoose.connect(
   "mongodb+srv://pautuop:1Smt88ldrDjFx90R@cluster0.2trjjhw.mongodb.net/?retryWrites=true&w=majority "
 );
@@ -70,6 +71,9 @@ app.post("/logout", (req, res) => {
   res.cookie("token", "").json("ok");
 });
 
+app.get("/test", (req, res) => {
+  res.json({ message: "Hello World" });
+});
 app.post("/post", uploadMiddleware.single("file"), async (req, res) => {
   const { originalname, path } = req.file;
   const parts = originalname.split(".");
@@ -77,16 +81,37 @@ app.post("/post", uploadMiddleware.single("file"), async (req, res) => {
   const newPath = path + "." + ext;
   fs.renameSync(path, newPath);
 
-  const { title, summary, content } = req.body;
+  const { token } = req.cookies;
+  jwt.verify(token, secret, {}, async (err, info) => {
+    if (err) throw err;
+    const { title, summary, content } = req.body;
 
-  const postDoc = await Post.create({
-    title,
-    summary,
-    content,
-    cover: newPath,
+    const postDoc = await Post.create({
+      title,
+      summary,
+      content,
+      cover: newPath,
+      author: info.id,
+    });
+    res.json(postDoc);
   });
-  res.json({ postDoc });
 });
+
+app.get("/post", async (req, res) => {
+  res.json(
+    await Post.find()
+      .populate("author", "username")
+      .sort({ createdAt: -1 })
+      .limit(10)
+  );
+});
+
+app.get("/post/:id", async (req, res) => {
+  const { id } = req.params;
+  const postDoc = await Post.findById(id).populate("author", "username");
+  res.json(postDoc);
+});
+
 app.listen(3000, () => {
   console.log("Server is running on port 3000");
 });
