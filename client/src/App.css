@@ -1,6 +1,9 @@
 *{
   box-sizing: border-box;
 }
+a {
+  cursor: pointer;
+}
 body {
   color: #222;
 }
@@ -101,6 +104,7 @@ button {
   color: #fff;
   border-radius: 5px;
   padding: 7px 0;
+  cursor: pointer;
 }
 
 form.login h1, form.register h1 {
